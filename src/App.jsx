@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, Suspense, lazy } from "react";
+import Footer from "./component/Footer";
 
 // 🔹 Lazy load các component nặng
 const Header = lazy(() => import("./component/Header"));
@@ -151,6 +152,11 @@ function App() {
           </>
         )}
       </div>
+
+      {/* Footer */}
+      <Suspense fallback={LoadingFallback}>
+        <Footer />
+      </Suspense>
     </div>
   );
 }
