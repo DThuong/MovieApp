@@ -1,154 +1,135 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
 import YouTube from 'react-youtube';
 import Modal from 'react-modal';
 
-// Chỉ set app element nếu element tồn tại
 if (typeof document !== 'undefined') {
-  const rootElement = document.getElementById('root') || document.body;
-  Modal.setAppElement(rootElement);
+  Modal.setAppElement(document.getElementById('root') || document.body);
 }
 
 const opts = {
-  height: '390',
-  width: '640',
-  playerVars: {
-    autoplay: 1,
-  },
+  width: '100%',
+  height: '100%',
+  playerVars: { autoplay: 1 },
 };
 
 const customStyles = {
-  overlay: {
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    zIndex: 1000,
-  },
+  overlay: { backgroundColor: 'rgba(0, 0, 0, 0.75)', zIndex: 1000 },
   content: {
-    top: '50%',
-    left: '50%',
-    right: 'auto',
-    bottom: 'auto',
-    marginRight: '-50%',
-    transform: 'translate(-50%, -50%)',
-    padding: '20px',
-    border: 'none',
-    borderRadius: '10px',
-    backgroundColor: '#1a1a1a',
+    top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+    padding: '20px', border: 'none', borderRadius: '10px',
+    backgroundColor: '#1a1a1a', maxWidth: '90vw', maxHeight: '90vh', width: '800px',
   },
 };
 
 const responsive = {
-  superLargeDesktop: {
-    breakpoint: { max: 4000, min: 3000 },
-    items: 10
-  },
-  desktop: {
-    breakpoint: { max: 3000, min: 1200 },
-    items: 7
-  },
-  tablet: {
-    breakpoint: { max: 1200, min: 600 },
-    items: 3
-  },
-  mobile: {
-    breakpoint: { max: 600, min: 0 },
-    items: 2
-  }
+  desktop: { breakpoint: { max: 3000, min: 1200 }, items: 6 },
+  tablet: { breakpoint: { max: 1200, min: 600 }, items: 3 },
+  mobile: { breakpoint: { max: 600, min: 0 }, items: 2 }
 };
 
-const MovieList = ({title, data = []}) => {
+const MovieList = ({ title, data = [] }) => {
   const [filmId, setFilmId] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorText, setErrorText] = useState('');
 
-  async function handleTrailer(id){
+  async function handleTrailer(id) {
     setIsLoading(true);
     setFilmId('');
-    setIsModalOpen(true);
-    
+    setErrorText('');
+
     try {
-      const url = `https://api.themoviedb.org/3/movie/${id}/videos?language=vi`;
-      const options = {
-        method: 'GET',
-        headers: {
-          accept: 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_MOVIE_API}`
+      const res = await fetch(
+        `https://api.themoviedb.org/3/movie/${id}/videos?language=en-US`,
+        {
+          headers: {
+            accept: 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_MOVIE_API}`,
+          },
         }
-      };
-      
-      const res = await fetch(url, options);
-      const data = await res.json();
-      
-      if(data.results && data.results.length > 0) {
-        setFilmId(data.results[0]?.key);
+      );
+
+      const videoData = await res.json();
+      const trailer = videoData.results?.find(
+        (v) => v.type === 'Trailer' && v.site === 'YouTube'
+      );
+
+      if (trailer) {
+        setFilmId(trailer.key);
+        setIsModalOpen(true);
+      } else {
+        setErrorText('Không tìm thấy trailer cho phim này.');
+        setIsModalOpen(true);
       }
     } catch (error) {
-      console.error('Error fetching trailer:', error);
+      setErrorText('Lỗi tải trailer, thử lại sau.');
+      setIsModalOpen(true);
+      console.error('❌ Lỗi khi fetch trailer:', error);
     } finally {
       setIsLoading(false);
     }
   }
 
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setFilmId('');
-    setIsLoading(false);
-  };
-
   return (
-    <div className='text-white w-full p-5'>
-      <h2 className='text-[30px] font-bold uppercase mb-3'>{title}</h2>
-      <Carousel responsive={responsive} containerClass='pb-5' itemClass="px-2">
-        {data.length > 0 &&
-          data.map((item) => (
-            <div
-              onClick={() => handleTrailer(item.id)}
-              key={item.id}
-              className="w-full h-[400px] relative group overflow-hidden rounded-2xl cursor-pointer"
-            >
-              <div className="w-full h-full group-hover:scale-105 transition-transform duration-500 ease-in-out">
-                <div className="absolute inset-0">
-                  <div className="absolute inset-0 bg-black/40"></div>
-                  <img
-                    className="w-full h-full object-cover"
-                    src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
-                    alt={item.title || item.original_title}
-                  />
-                </div>
-                <div className="absolute bottom-4 left-0 w-full px-3 text-center">
-                  <h3 className="text-white text-[20px] font-bold">
-                    {item.title || item.original_title}
-                  </h3>
-                </div>
+    <div className="text-white w-full p-5">
+      <h2 className="text-[30px] font-bold uppercase mb-3">{title}</h2>
+
+      <Carousel responsive={responsive} containerClass="pb-5" itemClass="px-2">
+        {data.map((item) => (
+          <div
+            key={item.id}
+            onClick={() => handleTrailer(item.id)}
+            className="w-full h-[400px] relative group overflow-hidden rounded-2xl cursor-pointer"
+          >
+            <div className="w-full h-full group-hover:scale-105 transition-transform duration-500 ease-in-out">
+              <div className="absolute inset-0 bg-black/40 z-10"></div>
+              <img
+                src={`https://image.tmdb.org/t/p/w500${item.poster_path}`}
+                alt={item.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-4 left-0 w-full px-3 text-center z-20">
+                <h3 className="text-white text-[20px] font-bold">
+                  {item.title}
+                </h3>
               </div>
             </div>
-          ))}
+          </div>
+        ))}
       </Carousel>
-        
+
       <Modal
         isOpen={isModalOpen}
-        onRequestClose={closeModal}
+        onRequestClose={() => setIsModalOpen(false)}
         style={customStyles}
-        contentLabel="Movie Trailer"
         shouldCloseOnOverlayClick={true}
-        shouldCloseOnEsc={true}
       >
-        <button 
-          className='text-white bg-red-600 px-3 py-1 rounded-md mb-2 hover:bg-red-700 transition-colors' 
-          onClick={closeModal}
+        <button
+          className="text-white bg-red-600 px-3 py-1 rounded-md mb-2 hover:bg-red-700 transition-colors"
+          onClick={() => setIsModalOpen(false)}
         >
           Đóng
         </button>
+
         {isLoading ? (
           <p className="text-white">Đang tải trailer...</p>
         ) : filmId ? (
-          <YouTube videoId={filmId} opts={opts} />
+          <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '16 / 9' }}>
+  <YouTube
+    videoId={filmId}
+    opts={opts}
+    className="absolute inset-0 w-full h-full"
+    iframeClassName="w-full h-full"
+  />
+</div>
         ) : (
-          <p className="text-white">Không tìm thấy trailer</p>
+          <p className="text-white">{errorText}</p>
         )}
       </Modal>
     </div>
-  )
-}
+  );
+};
 
-export default MovieList
+export default MovieList;
