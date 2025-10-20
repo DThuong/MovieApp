@@ -19,7 +19,7 @@ return (
           movie
         </h1>
 
-        <nav className="flex items-center space-x-3 sm:space-x-6 mt-2 sm:mt-0">
+        <nav className="flex items-center space-x-3 sm:space-x-6 mt-2 sm:mt-0 hidden sm:block">
           <a
             href="#"
             className="relative text-white after:content-[''] after:absolute after:left-0 after:bottom-0 after:w-0 after:h-[2px] after:bg-red-500 after:transition-all after:duration-300 hover:after:w-full active:scale-95"
